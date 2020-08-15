@@ -29,13 +29,22 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
     float Damage;
-
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
+    float ImpulseStrength;
+    
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay")
     TSubclassOf<UDamageType> DamageType;
 
     UFUNCTION(BlueprintCallable, Category = "Gameplay")
-    void FireBullet();
+    void Fire();
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void OnFire();
     
+    UFUNCTION(BlueprintCallable, Category = "Gameplay")
+    void FireBullet();
+
     UFUNCTION(BlueprintImplementableEvent)
     void OnFireBullet();
 

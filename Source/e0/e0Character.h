@@ -34,6 +34,8 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Category = Gameplay, meta = (AllowPrivateAccess = "true"))
 	AE0BaseGadget* EquippedGadget;
 
+	FVector ViewKick;
+
 public:
 	Ae0Character();
 
@@ -48,6 +50,9 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Camera)
+	float RecoilRecoverySpeed;
 
 protected:
 	
@@ -114,5 +119,10 @@ public:
 	void StartUsingGadget();
 	UFUNCTION(BlueprintCallable)
 	void StopUsingGadget();
+
+	UFUNCTION(BlueprintCallable, Category = Camera)
+	void AddViewKick(FVector KickVector);
+
+	virtual void Tick(float DeltaTime) override;
 };
 
