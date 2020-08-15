@@ -12,6 +12,50 @@ class UPhysicsHandleComponent;
 class UArrowComponent;
 class ACharacter;
 class UDamageType;
+class UStaticMesh;
+
+USTRUCT(BlueprintType)
+struct FHitscanProjectileInfo
+{
+    GENERATED_BODY()
+    FHitscanProjectileInfo()
+    {
+    }
+    FHitscanProjectileInfo(float Damage, float ImpulseStrength, UStaticMesh* ProjectileMesh, const UDamageType* DamageType)
+        : Damage(Damage),
+          ImpactStrength(ImpulseStrength),
+          ProjectileMesh(ProjectileMesh)
+    {
+        this->DamageType = DamageType->GetClass(); 
+    }
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Damage;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float ImpactStrength;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UStaticMesh* ProjectileMesh;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TSubclassOf<UDamageType> DamageType;
+
+    friend bool operator==(const FHitscanProjectileInfo& Lhs, const FHitscanProjectileInfo& RHS)
+    {
+        return Lhs.Damage == RHS.Damage
+            && Lhs.ImpactStrength == RHS.ImpactStrength
+            && Lhs.ProjectileMesh == RHS.ProjectileMesh
+            && Lhs.DamageType == RHS.DamageType;
+    }
+
+    friend bool operator!=(const FHitscanProjectileInfo& Lhs, const FHitscanProjectileInfo& RHS)
+    {
+        return !(Lhs == RHS);
+    }
+};
+
+FORCEINLINE uint32 GetTypeHash(const FHitscanProjectileInfo& b)
+{
+    return FCrc::MemCrc_DEPRECATED(&b, sizeof(FHitscanProjectileInfo));
+}
 
 /**
  * 
@@ -26,6 +70,8 @@ public:
     AE0GravityGlove();
 
 protected:
+#pragma region GravityGlove
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gravity Glove")
     float PushCooldown;
 
@@ -101,8 +147,22 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gravity Glove")
     UArrowComponent* ArrowComponent;
 
+#pragma endregion GravityGlove
+
+#pragma region KineticShield
+    
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    float ProjectileCatchAngle;
+
+    UPROPERTY(BlueprintReadOnly)
+    TMap<FHitscanProjectileInfo, int> ProjectileCountMap;
+    
+#pragma endregion KineticShield
+
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Gravity Glove")
     ACharacter* OwnerCharacter;
+
+#pragma region GravityGlove
 
     UFUNCTION(BlueprintCallable, Category = "Gravity Glove")
     void PushComponent(UPrimitiveComponent* PushedComponent, FVector ForwardDirection, FName BoneName, float Distance);
@@ -140,6 +200,14 @@ protected:
 
     float ComputeError();
 
+#pragma endregion GravityGlove
+
+#pragma region KineticShield
+
+    void CatchHitscanProjectile(float Damage, float ImpulseStrength, UStaticMesh* ProjectileMesh, const UDamageType* DamageType);
+    
+#pragma endregion KineticShield
+    
     virtual void BeginPlay() override;
 
 private:
@@ -148,7 +216,7 @@ private:
     float ErrorTime;
     float Error;
     float NextGrabTime;
-    
+
 public:
     virtual void StartUsing() override;
     virtual void StopUsing() override;

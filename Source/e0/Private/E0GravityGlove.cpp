@@ -3,12 +3,18 @@
 
 #include "E0GravityGlove.h"
 
+
+#include "E0BaseWeapon.h"
+#include "E0LineTraceWeapon.h"
 #include "Camera/CameraComponent.h"
 #include "Components/ArrowComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "GameFramework/DamageType.h"
+
+static TAutoConsoleVariable<int32>
+CVarDebugKineticShield(TEXT("E0.DebugKineticShield"), 0, TEXT("Add messages on catch projectiles"), ECVF_Cheat);
 
 AE0GravityGlove::AE0GravityGlove()
 {
@@ -38,6 +44,7 @@ AE0GravityGlove::AE0GravityGlove()
     MinGrabAngle = -60;
     MaxGrabAngle = 60;
     GrabDelay = 0.4f;
+    ProjectileCatchAngle = 90;
 }
 
 void AE0GravityGlove::PushComponent(UPrimitiveComponent* PushedComponent, const FVector ForwardDirection, const FName BoneName,
@@ -175,6 +182,20 @@ float AE0GravityGlove::ComputeError()
     return Error;
 }
 
+void AE0GravityGlove::CatchHitscanProjectile(const float Damage, const float ImpulseStrength, UStaticMesh* ProjectileMesh,
+                                             const UDamageType* DamageType)
+{
+    const FHitscanProjectileInfo Info(Damage, ImpulseStrength, ProjectileMesh, DamageType);
+    if(!ProjectileCountMap.Contains(Info))
+    {
+        ProjectileCountMap.Add(Info);
+    }
+    ProjectileCountMap[Info]++;
+    if(CVarDebugKineticShield.GetValueOnGameThread() != 0 && GEngine)
+        GEngine->AddOnScreenDebugMessage(-1, 3, FColor::White,
+            FString::Printf(TEXT("Catched projectile. Total projectiles of type %d"), ProjectileCountMap[Info]));
+}
+
 void AE0GravityGlove::StartUsing()
 {
     Super::StartUsing();
@@ -291,8 +312,20 @@ bool AE0GravityGlove::OnCharacterGetPointDamage_Implementation(float Damage, con
     FVector HitNormal, UPrimitiveComponent* HitComponent, FName BoneName, FVector ShotFromDirection, AController* InstigatedBy,
     AActor* DamageCauser, const FHitResult& HitInfo)
 {
-    const bool IsCatchedBullet = IsPulling() && !IsGrabbing && FVector::DotProduct(GetActorForwardVector(), ShotFromDirection);    
-    return IsCatchedBullet;
+    const bool IsCatchedBullet = IsPulling() && !IsGrabbing && FVector::DotProduct(GetActorForwardVector(), ShotFromDirection) <=
+        FMath::Cos(FMath::DegreesToRadians(ProjectileCatchAngle));
+    
+    if(IsCatchedBullet)
+    {
+        AE0LineTraceWeapon* HitscanWeapon = Cast<AE0LineTraceWeapon>(DamageCauser);
+        if(HitscanWeapon)
+        {
+            CatchHitscanProjectile(Damage, HitscanWeapon->ImpulseStrength, HitscanWeapon->ProjectileMesh, DamageType);
+            return true;
+        }
+        return false;
+    }
+    return false;
 }
 
 void AE0GravityGlove::BeginPlay()

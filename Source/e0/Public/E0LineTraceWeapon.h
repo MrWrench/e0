@@ -20,18 +20,21 @@ class E0_API AE0LineTraceWeapon : public AE0BaseWeapon
 public:
     AE0LineTraceWeapon();
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
+    float Damage;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
+    float ImpulseStrength;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Visuals")
+    class UStaticMesh* ProjectileMesh;
+
 protected:
     UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Components")
     USkeletalMeshComponent* MeshComp;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
     float ShootRange;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
-    float Damage;
-    
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
-    float ImpulseStrength;
     
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay")
     TSubclassOf<UDamageType> DamageType;
